@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teaser Cinemagraph: Bismuth</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, serif;
+        }
+
+        /* 1. 배경 이미지 공간감 (켄 번스 효과) */
+        .bg-container {
+            position: absolute;
+            top: -5%;
+            left: -5%;
+            width: 110%;
+            height: 110%;
+            /* 유저의 원본 이미지를 배경으로 가져옵니다 */
+            background-image: url('teaser_cut_3_1775551126172.png');
+            background-size: cover;
+            background-position: center 30%;
+            animation: kenBurns 20s infinite alternate ease-in-out;
+            /* 극적인 시네마틱 톤 보정 */
+            filter: brightness(0.65) contrast(1.2) saturate(1.1);
+        }
+
+        @keyframes kenBurns {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.08) translate(-1.5%, -1%); }
+        }
+
+        /* 2. 캔버스 파티클 레이어 (공기 중에 떠다니는 빛무리) */
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            mix-blend-mode: screen; /* 빛이 겹쳐 밝아지는 효과 */
+            z-index: 2;
+        }
+
+        /* 3. 시각적 깊이를 위한 비네팅 (가장자리 어둡게) */
+        .vignette {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 40%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.9) 100%);
+            pointer-events: none;
+            animation: pulseVignette 6s infinite alternate ease-in-out;
+            z-index: 3;
+        }
+
+        @keyframes pulseVignette {
+            0% { opacity: 0.85; }
+            100% { opacity: 1; }
+        }
+
+        /* 4. 티저 텍스트 타이포그래피 */
+        .title-container {
+            position: absolute;
+            bottom: 15%;
+            width: 100%;
+            text-align: center;
+            color: #ffffff;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .title {
+            font-size: 5rem;
+            letter-spacing: 20px;
+            font-weight: 300;
+            text-transform: uppercase;
+            text-shadow: 0 5px 30px rgba(0, 0, 0, 1), 0 0 20px rgba(255, 255, 255, 0.2);
+            opacity: 0;
+            /* 텍스트 서서히 등장 */
+            animation: fadeInText 3.5s forwards 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .subtitle {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            letter-spacing: 8px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeInText 3.5s forwards 3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes fadeInText {
+            0% { opacity: 0; transform: translateY(30px); filter: blur(15px); }
+            100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        /* 스크롤 다운을 유도하는 가벼운 인디케이터 (선택) */
+        .scroll-down {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.7), transparent);
+            animation: scrollPulse 2s infinite;
+            z-index: 10;
+            opacity: 0;
+            animation: scrollPulse 2s infinite, fadeInText 2s forwards 4.5s;
+        }
+
+        @keyframes scrollPulse {
+            0% { transform: translate(-50%, -10px); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translate(-50%, 10px); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="bg-container"></div>
+<canvas id="particle-canvas"></canvas>
+<div class="vignette"></div>
+
+<div class="title-container">
+    <div class="title">BISMUTH</div>
+    <div class="subtitle">The entity comes | 2026. 04. 08</div>
+</div>
+
+<div class="scroll-down"></div>
+
+<script>
+    // 안개 / 불티를 표현하는 캔버스 파티클 시스템
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    let particlesArray = [];
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            // 크기 랜덤화
+            this.size = Math.random() * 2.5 + 0.5;
+            // 바람에 흩날리는 속도
+            this.speedX = Math.random() * 0.8 - 0.4;
+            this.speedY = Math.random() * -1.2 - 0.3; // 기본적으로 위로 상승
+            // 투명도
+            this.opacity = Math.random() * 0.5 + 0.1;
+        }
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+
+            // 작아지면서 소멸
+            if (this.size > 0.2) this.size -= 0.003;
+            
+            // 화면 밖으로 나가거나 완전 투명해지면 재설정
+            if (this.y < -10 || this.opacity <= 0) {
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height + 10;
+                this.size = Math.random() * 2.5 + 0.5;
+                this.opacity = Math.random() * 0.5 + 0.1;
+                this.speedX = Math.random() * 0.8 - 0.4;
+                this.speedY = Math.random() * -1.2 - 0.3;
+            }
+        }
+        draw() {
+            // 주황/황금색 빛무리 (캐릭터 분위기에 맞춰 색 변경 가능)
+            ctx.fillStyle = `rgba(255, 190, 80, ${this.opacity})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.filter = 'blur(1px)';
+            ctx.fill();
+        }
+    }
+
+    function init() {
+        for (let i = 0; i < 150; i++) {
+            particlesArray.push(new Particle());
+        }
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+            particlesArray[i].draw();
+        }
+        requestAnimationFrame(animateParticles);
+    }
+
+    init();
+    animateParticles();
+</script>
+
+</body>
+</html>
